@@ -5,7 +5,11 @@ module File(
             File(..),
             isRoot,
             fileNames,
-            pathToList
+            pathToList,
+            getFileByName,
+            getFileByPath,
+            cd,
+            root
            )
 where
 
@@ -18,7 +22,8 @@ data File
                  content :: String -- ^ The file contents
                }
   -- | Directory containing other directories or Normal files. The root
-  -- directory will have empty file name ""
+  -- directory will have empty file name "", which might lead to some confusing
+  -- error messages
   | Directory  {
                  name :: String, -- ^ The name of the directory
                  files :: [File] -- ^ The files contained in the directory
@@ -36,7 +41,7 @@ isRoot (NormalFile _ _) = error "The file should be a Directory"
 fileNames :: File -- ^ The directory which contents we want
           -> String -- ^ The resulting string
 fileNames (Directory _ files) = intercalate "  " $ map name files
-fileNames (NormalFile _ _) = error "should be directory" 
+fileNames (NormalFile _ _) = error "should be directory"
 -- | Transform path string to list of filenames
 pathToList :: String   -- ^ String representing the path
            -> [String] -- ^ List of filenames
@@ -46,7 +51,41 @@ pathToList str = pathToList1 str "" []
           | char == '/' = pathToList1 rest "" (currentFilename : lstOfFilenames)
           | otherwise   = pathToList1 rest (currentFilename ++ [char]) lstOfFilenames
 
+cd :: String -- ^ Path to the directory
+   -> File   -- ^ Current dir
+   -> Either File String   -- | The resulting directory on the left or
+                           -- error message on the right
+cd path wd = either (checkDir) (Right . id) (getFileByPath path wd)
+  where checkDir (NormalFile _ _) = Right ("cd: not a directory:" ++ path)
+        checkDir dir@(Directory _ _) = Left dir
 
+
+
+getFileByName :: File -- ^ Dirtectory from which we want to get the file
+              -> String -- ^ Filename
+              -> Either File String -- ^ The wanted file or error message
+getFileByName (NormalFile dName _) fName = Right $ dName ++ " isn't a directory"
+getFileByName (Directory dirName files) fName
+  | fName `elem` (map name files) = Left $ head $ filter byName files
+  | otherwise                     = Right $ fName ++ " is not in " ++ dirName
+  where byName = ((fName ==) . name)
+
+getFileByPath :: String              -- ^ Path to the file
+              -> File                -- ^ Working directory
+              -> Either File String  -- | The required file on the left or
+                                     -- error message on the right
+getFileByPath ""   _  = Right "No path given"
+getFileByPath path wd = gFile (pathToList path) wd
+  where gFile :: [String] -- ^ List of fileNames to traverse to reach the wanted
+              -> File   -- ^ Working directory
+              -> Either File String   -- | File, with the needed name from the
+                                      -- working dir
+        gFile []       wd = Right "File not found"
+        gFile ["."]    wd = Left wd
+        gFile (".":rs) wd = gFile rs wd
+        gFile [fName]  wd = either (Left) (notFound) (getFileByName wd fName)
+        gFile (fn:rs)  wd = either (gFile rs) (notFound) (getFileByName wd fn)
+        notFound _ = Right ("Cannot find file: " ++ path)
 
 -- | Example file system
 
