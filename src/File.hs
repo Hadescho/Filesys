@@ -3,7 +3,9 @@
 -}
 module File(
             File(..),
-            isRoot
+            isRoot,
+            fileNames,
+            pathToList
            )
 where
 
@@ -15,7 +17,7 @@ data File
                  name :: String, -- ^ The name of the file
                  content :: String -- ^ The file contents
                }
-  -- | Directory containing other directories or Normal files. The root 
+  -- | Directory containing other directories or Normal files. The root
   -- directory will have empty file name ""
   | Directory  {
                  name :: String, -- ^ The name of the directory
@@ -33,9 +35,16 @@ isRoot (NormalFile _ _) = error "The file should be a Directory"
 --   given directory
 fileNames :: File -- ^ The directory which contents we want
           -> String -- ^ The resulting string
-fileNames (Directory _ files) = intercalate "  " $ map name files  
-fileNames (NormalFile _ _) = error "should be directory"
-
+fileNames (Directory _ files) = intercalate "  " $ map name files
+fileNames (NormalFile _ _) = error "should be directory" 
+-- | Transform path string to list of filenames
+pathToList :: String   -- ^ String representing the path
+           -> [String] -- ^ List of filenames
+pathToList str = pathToList1 str "" []
+  where pathToList1 str@(char:rest) currentFilename lstOfFilenames
+          | null rest   = reverse ((currentFilename ++ [char]) : lstOfFilenames)
+          | char == '/' = pathToList1 rest "" (currentFilename : lstOfFilenames)
+          | otherwise   = pathToList1 rest (currentFilename ++ [char]) lstOfFilenames
 
 
 
