@@ -6,6 +6,7 @@ module Cli(parseCmd, splitOn, root, File) where
 import Utils
 import File
 import Data.Either
+import Data.Maybe
 -- | Parses the command, passes it for execution and returns the value
 parseCmd :: File   -- ^ Current directory
          -> String -- ^ The comand and it's parameters
@@ -15,10 +16,8 @@ parseCmd wd string = execCmd cmd
         cmdLst  = splitOn string ' '
 
 -- | Executes the command and return the result
-execCmd :: (File,    -- ^ Working directory
-            String,  -- ^ Command name
-            [String] -- ^ Parameters
-           ) -> (File, String) -- ^ working directory and Result string to be shown on output
+execCmd :: (File, String, [String]) -- ^ (Working dir, command, arguments)
+        -> (File, String) -- ^ working directory and Result string to be shown on output
 
 -- ls
 execCmd (wd, "ls", [])  = (wd, fileNames wd)
@@ -41,6 +40,18 @@ execCmd (wd, "cat", argLst) = (wd, resultString)
   where resultString = foldr (++) "" $ map (++ ['\n']) resultsForEach
         resultsForEach = map (cat) $ lefts eitherFiles
         eitherFiles = map (flip getFileByPath wd) argLst
+
+
+-- pwd
+execCmd (wd, "pwd", []) = pwd wd
+  where pwd cwd
+          | cwd == root = (wd, "/")
+          | otherwise   = (wd, listToPath $ pwd1 wd [])
+        pwd1 :: File -> [File] -> [File]
+        pwd1 cwd result 
+          | cwd == root = result
+          | otherwise   = pwd1 (fromJust $ getParent cwd) (cwd:result)
+
 
 -- Keep this one last
 execCmd (wd, invalidCmd, _) = (wd, "Invalid command " ++  invalidCmd)

@@ -6,8 +6,11 @@ module File(
             isRoot,
             fileNames,
             pathToList,
+            listToPath,
             getFileByName,
             getFileByPath,
+            getParent,
+            file4,
             cd,
             cat,
             root
@@ -15,7 +18,10 @@ module File(
 where
 
 import Data.List
+import Data.Maybe
+import Data.Either
 
+-- | Representation of a file in a filesystem
 data File
   -- | Normal file with text content inside
   = NormalFile {
@@ -56,14 +62,12 @@ pathToList str
 
 cd :: String -- ^ Path to the directory
    -> File   -- ^ Current dir
-   -> Either File String   -- | The resulting directory on the left or
-                           -- error message on the right
+   -> Either File String   -- ^ The resulting directory on the left or error message on the right
 cd path wd = either (checkDir) (Right . id) (getFileByPath path wd)
   where checkDir (NormalFile _ _) = Right ("cd: not a directory:" ++ path)
         checkDir dir@(Directory _ _) = Left dir
 
-
-
+-- | Get a file from a directory by it's name
 getFileByName :: File -- ^ Dirtectory from which we want to get the file
               -> String -- ^ Filename
               -> Either File String -- ^ The wanted file or error message
@@ -73,10 +77,10 @@ getFileByName (Directory dirName files) fName
   | otherwise                     = Right $ fName ++ " is not in " ++ dirName
   where byName = ((fName ==) . name)
 
+-- | Get a file by its relative path to the current working directory
 getFileByPath :: String              -- ^ Path to the file
               -> File                -- ^ Working directory
-              -> Either File String  -- | The required file on the left or
-                                     -- error message on the right
+              -> Either File String  -- ^ The required file on the left or error message on the right
 getFileByPath ""   _  = Right "No path given"
 getFileByPath path wd 
   | (length path == 1) && (head path == '/') = Left root 
@@ -84,8 +88,7 @@ getFileByPath path wd
   | otherwise = gFile (pathToList path) wd
   where gFile :: [String] -- ^ List of fileNames to traverse to reach the wanted
               -> File   -- ^ Working directory
-              -> Either File String   -- | File, with the needed name from the
-                                      -- working dir
+              -> Either File String   -- ^ File, with the needed name from the working dir
         gFile []       wd = Right "File not found"
         gFile ["."]    wd = Left wd
         gFile (".":rs) wd = gFile rs wd
@@ -101,14 +104,21 @@ cat f@(NormalFile _ _) = content f
 cat f                  = name f ++ " is not a normal file."
 
 -- | Return the parent of the file or Nothing if not found
--- getParent :: File -- ^ The file that we search from the root
---           -> Maybe File -- ^ The file's parent or Nothing if not found
--- getParent file = search file root
---   where search file wd 
---         | file `elem` (files wd) = Just wd
---         | length dirs > 0 = maybe $ filter isJust $ map (search file) dirs
---         | otherwise = Nothing
---         where dirs = filter isDirectory $ files wd
+-- This way of searching for the element may cause problem if the name and the
+-- contents of the file / directory are the same
+getParent :: File -- ^ The file that we search from the root
+          -> Maybe File -- ^ The file's parent or Nothing if not found
+getParent file
+  | file == root = Just root
+  | otherwise    = search file root
+  where search file wd 
+          | file `elem` (files wd) = Just wd
+          | length dirs > 0 = if (length dirsParse > 0) 
+                                then (Just $ head dirsParse)
+                                else Nothing
+          | otherwise = Nothing
+          where dirs = filter isDirectory $ files wd
+                dirsParse = catMaybes $ map (search file) dirs
 
 -- | Check if the argument given is a NormalFile
 isNormalFile :: File -- ^ The file to check
@@ -122,8 +132,16 @@ isDirectory :: File -- ^ The file to check
 isDirectory (Directory _ _) = True
 isDirectory _               = False
 
+-- | Returns string representing a path from a list of files
+listToPath :: [File] -- ^ The mentioned list
+           -> String -- ^ The result
 
--- | Example file system
+listToPath lst = helper lst ""
+  where helper :: [File] -> String -> String
+        helper [] result     = result
+        helper (x:xs) result = helper xs (result ++ ['/']++(name x))
+
+-- Example file system
 
 file1 = NormalFile "file1" "File1's content"
 file2 = NormalFile "file2" "File2's content"
@@ -131,5 +149,8 @@ file3 = NormalFile "file3" "File3's content"
 file4 = NormalFile "file4" "File4's content"
 dir1  = Directory "nkotsev" [file3, file4]
 dir2  = Directory "home" [dir1, file2]
+
+
+-- | Root file of the filesystem
+root :: File
 root  = Directory "" [dir2, file1]
-emptydir = Directory "emptydir" []
