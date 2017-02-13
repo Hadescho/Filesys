@@ -19,12 +19,19 @@ execCmd :: (File,    -- ^ Working directory
             [String] -- ^ Parameters
            ) -> (File, String) -- ^ working directory and Result string to be shown on output
 
+-- ls
 execCmd (wd, "ls", [])  = (wd, fileNames wd)
-execCmd (wd, "ls", [path]) = either (buildResponse) (informError) (cd path wd)
+execCmd (wd, "ls", [path])  = either (buildResponse) (informError) (cd path wd)
   where informError msg     = (wd, msg)
         buildResponse newWd = (wd, fileNames newWd)
 execCmd (wd, "ls", _) = (wd, "Too many arguments.")
 
+-- cd
+execCmd (wd, "cd", []) = (root, "") 
+execCmd (wd, "cd", [path])  = either (buildResponse) (informError) (cd path wd)
+  where informError msg     = (wd, msg)
+        buildResponse newWd = (newWd, "")
+execCmd (wd, "cd", _) = (wd, "Too many arguments")
 
 -- Keep this one last
 execCmd (wd, invalidCmd, _) = (wd, "Invalid command " ++  invalidCmd)

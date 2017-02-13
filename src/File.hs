@@ -45,7 +45,9 @@ fileNames (NormalFile _ _) = error "should be directory"
 -- | Transform path string to list of filenames
 pathToList :: String   -- ^ String representing the path
            -> [String] -- ^ List of filenames
-pathToList str = pathToList1 str "" []
+pathToList str
+  | last str == '/' = pathToList1 (init str) "" []
+  | otherwise = pathToList1 str "" []
   where pathToList1 str@(char:rest) currentFilename lstOfFilenames
           | null rest   = reverse ((currentFilename ++ [char]) : lstOfFilenames)
           | char == '/' = pathToList1 rest "" (currentFilename : lstOfFilenames)
