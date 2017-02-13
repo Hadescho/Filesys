@@ -89,9 +89,12 @@ getFileByPath path wd
   where gFile :: [String] -- ^ List of fileNames to traverse to reach the wanted
               -> File   -- ^ Working directory
               -> Either File String   -- ^ File, with the needed name from the working dir
-        gFile []       wd = Right "File not found"
-        gFile ["."]    wd = Left wd
-        gFile (".":rs) wd = gFile rs wd
+
+        gFile []        wd = Right "File not found"
+        gFile ["."]     wd = Left wd
+        gFile (".":rs)  wd = gFile rs wd
+        gFile [".."]    wd = Left $ fromJust $ getParent wd
+        gFile ("..":rs) wd = gFile rs $ fromJust $ getParent wd
         gFile [fName]  wd = either (Left) (notFound) (getFileByName wd fName)
         gFile (fn:rs)  wd = either (gFile rs) (notFound) (getFileByName wd fn)
         notFound _ = Right ("Cannot find file: " ++ path)
