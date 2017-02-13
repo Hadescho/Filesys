@@ -9,6 +9,7 @@ module File(
             getFileByName,
             getFileByPath,
             cd,
+            cat,
             root
            )
 where
@@ -77,7 +78,10 @@ getFileByPath :: String              -- ^ Path to the file
               -> Either File String  -- | The required file on the left or
                                      -- error message on the right
 getFileByPath ""   _  = Right "No path given"
-getFileByPath path wd = gFile (pathToList path) wd
+getFileByPath path wd 
+  | (length path == 1) && (head path == '/') = Left root 
+  | head path == '/' = gFile (pathToList $ tail path) root
+  | otherwise = gFile (pathToList path) wd
   where gFile :: [String] -- ^ List of fileNames to traverse to reach the wanted
               -> File   -- ^ Working directory
               -> Either File String   -- | File, with the needed name from the
@@ -88,6 +92,36 @@ getFileByPath path wd = gFile (pathToList path) wd
         gFile [fName]  wd = either (Left) (notFound) (getFileByName wd fName)
         gFile (fn:rs)  wd = either (gFile rs) (notFound) (getFileByName wd fn)
         notFound _ = Right ("Cannot find file: " ++ path)
+
+-- | Get the contents of a Normal File or return error if the file isn't normal
+cat :: File -- ^ File, which content shall be shown
+    -> String -- ^ The content of the file or the error message that first arg. is not a NormalFile
+
+cat f@(NormalFile _ _) = content f
+cat f                  = name f ++ " is not a normal file."
+
+-- | Return the parent of the file or Nothing if not found
+-- getParent :: File -- ^ The file that we search from the root
+--           -> Maybe File -- ^ The file's parent or Nothing if not found
+-- getParent file = search file root
+--   where search file wd 
+--         | file `elem` (files wd) = Just wd
+--         | length dirs > 0 = maybe $ filter isJust $ map (search file) dirs
+--         | otherwise = Nothing
+--         where dirs = filter isDirectory $ files wd
+
+-- | Check if the argument given is a NormalFile
+isNormalFile :: File -- ^ The file to check
+             -> Bool -- ^ Result of the check
+isNormalFile (NormalFile _ _) = True
+isNormalFile _                = False
+
+-- | Check if the argument given is a Directory
+isDirectory :: File -- ^ The file to check
+            -> Bool -- ^ Result of the check
+isDirectory (Directory _ _) = True
+isDirectory _               = False
+
 
 -- | Example file system
 
