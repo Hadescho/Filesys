@@ -1,7 +1,7 @@
 {-
   Module: Cli  
 -}
-module Cli(parseCmd, splitOn, root) where
+module Cli(parseCmd, splitOn, root, File) where
 
 import Utils
 import File
