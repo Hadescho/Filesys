@@ -1,11 +1,13 @@
 {-
   Module: Main
 -}
+-- | The main module of the program
 module Main where
 import Control.Monad
 import System.IO
 import Cli
-main :: IO ()
+-- | The entry poing of the program
+main :: IO () -- ^ Empty IO
 main = cmd [root]
 
 -- | The endless loop which will keep a state for the working directory

@@ -1,6 +1,8 @@
 {-
   Module: Cli  
 -}
+
+-- | Functions used for the command line interface
 module Cli(parseCmd, splitOn, root, File) where
 
 import Utils

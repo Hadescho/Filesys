@@ -2,8 +2,10 @@
   Module: Utils  
 -}
 
+-- | Utility functions
 module Utils(splitOn) where
 
+-- | Split string on certain character
 splitOn :: String -- ^ The string which will be splitted
         -> Char   -- ^ The delimiter
         -> [String] -- ^ Result

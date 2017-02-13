@@ -10,7 +10,6 @@ module File(
             getFileByName,
             getFileByPath,
             getParent,
-            file4,
             cd,
             cat,
             root
@@ -60,6 +59,7 @@ pathToList str
           | char == '/' = pathToList1 rest "" (currentFilename : lstOfFilenames)
           | otherwise   = pathToList1 rest (currentFilename ++ [char]) lstOfFilenames
 
+-- | Return a directory
 cd :: String -- ^ Path to the directory
    -> File   -- ^ Current dir
    -> Either File String   -- ^ The resulting directory on the left or error message on the right
